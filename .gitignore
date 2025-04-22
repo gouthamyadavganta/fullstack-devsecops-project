@@ -5,3 +5,4 @@ dist/
 build/
 .terraform/
 
+.aws/
