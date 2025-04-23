@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+spec:
+  selector:
+    app: client
+  ports:
+    - port: 80
+      targetPort: {{ .Values.client.service.port }}
+  type: {{ .Values.client.service.type }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server
+spec:
+  selector:
+    app: server
+  ports:
+    - port: 80
+      targetPort: {{ .Values.server.service.port }}
+  type: {{ .Values.server.service.type }}
+

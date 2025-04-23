@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mern-app.fullname" . }}-server
+  labels:
+    {{- include "mern-app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: server
+    spec:
+      initContainers:
+        - name: debug-env
+          image: busybox
+          command: ["sh", "-c", "echo $MONGO_URI; sleep 10"]
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mern-app-mongo-0.mern-app-mongo:27017/mern-social"
+      containers:
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.server.service.port }}
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mern-app-mongo-0.mern-app-mongo:27017/mern-social"  # Hardcoded URI for testing
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.server.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      terminationGracePeriodSeconds: 30
+
