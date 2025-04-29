@@ -1,49 +1,15 @@
 client:
-  image:
-    repository: gantagouthamyadav/fullstack-client
-    tag: latest
-  replicaCount: 2
-  service:
-    type: ClusterIP
-    port: 3000
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "128Mi"
-    limits:
-      cpu: "500m"
-      memory: "512Mi"
+  image: gantagouthamyadav/fullstack-server:a910b25
+  replicas: 2
+  port: 3000
 
 server:
-  image:
-    repository: gantagouthamyadav/fullstack-server
-    tag: latest
-  replicaCount: 2
-  service:
-    type: ClusterIP
-    port: 6001
+  image: gantagouthamyadav/fullstack-server:a910b25
+  replicas: 2
+  port: 6001
   mongo:
-    secretName: mongodb-secret
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "128Mi"
-    limits:
-      cpu: "500m"
-      memory: "512Mi"
+    uri: "mongodb://fullstack-app-mongo.fullstack.svc.cluster.local:27017/mern-social"
 
 ingress:
   enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-  hosts:
-    - host: your-app.dev
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - hosts:
-        - your-app.dev
-      secretName: your-app-tls-secret
-
+  host: your-app.dev
