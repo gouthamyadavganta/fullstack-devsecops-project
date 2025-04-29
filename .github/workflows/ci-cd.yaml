@@ -7,7 +7,6 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
   TFSTATE_BUCKET: ${{ secrets.TFSTATE_BUCKET }}
   CHART_BUCKET: ${{ secrets.CHART_BUCKET }}
 
@@ -21,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
 
       - name: Install & Test Server
         run: |
@@ -73,21 +72,21 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build & Push Server
+      - name: Build & Push Server Image
         uses: docker/build-push-action@v4
         with:
           context: ./server
           push: true
-          tags: |
-            ${{ env.ECR_REGISTRY }}/fullstack-server:${{ github.sha }}
+          tags:
+            - ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-server:${{ github.sha }}
 
-      - name: Build & Push Client
+      - name: Build & Push Client Image
         uses: docker/build-push-action@v4
         with:
           context: ./client
           push: true
-          tags: |
-            ${{ env.ECR_REGISTRY }}/fullstack-client:${{ github.sha }}
+          tags:
+            - ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-client:${{ github.sha }}
 
   terraform:
     name: Terraform Apply
