@@ -1,4 +1,5 @@
 import express from "express";
+const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DB_URI;
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cors from "cors";
