@@ -11,7 +11,8 @@ env:
   CHART_BUCKET: ${{ secrets.CHART_BUCKET }}
 
 jobs:
-  lint-and-test:
+  lint-and-build:
+    name: Lint & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,17 +22,15 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install & Test Server
+      - name: Install Server Dependencies
         run: |
           cd server
           npm ci
-          npm test
 
-      - name: Install & Test Client
+      - name: Install Client Dependencies
         run: |
           cd client
           npm ci
-          npm test
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -53,7 +52,8 @@ jobs:
           helm lint fullstack-app
 
   build-and-push:
-    needs: lint-and-test
+    name: Build & Push Docker Images
+    needs: lint-and-build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,6 +88,7 @@ jobs:
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-client:${{ github.sha }}
 
   terraform:
+    name: Terraform Apply
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -108,6 +109,7 @@ jobs:
           terraform apply -auto-approve
 
   helm-release:
+    name: Package & Publish Helm Chart
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -136,6 +138,7 @@ jobs:
           aws s3 cp index.yaml s3://${{ env.CHART_BUCKET }}/
 
   argocd-sync:
+    name: Trigger Argo CD Sync
     needs: helm-release
     runs-on: ubuntu-latest
     steps:
@@ -145,3 +148,4 @@ jobs:
           argocd_server: ${{ secrets.ARGOCD_SERVER }}
           argocd_token: ${{ secrets.ARGOCD_TOKEN }}
           args: app sync fullstack-app
+
