@@ -12,7 +12,6 @@ env:
 
 jobs:
   lint-and-test:
-    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
 
       - name: Install & Test Server
         run: |
@@ -37,7 +36,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7
+          terraform_version: "1.5.7"
 
       - name: Terraform fmt & validate
         run: |
@@ -50,10 +49,10 @@ jobs:
         uses: azure/setup-helm@v3
 
       - name: Helm lint
-        run: helm lint fullstack-app
+        run: |
+          helm lint fullstack-app
 
   build-and-push:
-    name: Build & Push Docker Images
     needs: lint-and-test
     runs-on: ubuntu-latest
     permissions:
@@ -75,21 +74,20 @@ jobs:
       - name: Build & Push Server Image
         uses: docker/build-push-action@v4
         with:
-          context: ./server
+          context: server
           push: true
-          tags:
-            - ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-server:${{ github.sha }}
+          tags: |-
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-server:${{ github.sha }}
 
       - name: Build & Push Client Image
         uses: docker/build-push-action@v4
         with:
-          context: ./client
+          context: client
           push: true
-          tags:
-            - ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-client:${{ github.sha }}
+          tags: |-
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/fullstack-client:${{ github.sha }}
 
   terraform:
-    name: Terraform Apply
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +96,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7
+          terraform_version: "1.5.7"
 
       - name: Terraform Init & Apply
         working-directory: terraform-aws-infra
@@ -110,7 +108,6 @@ jobs:
           terraform apply -auto-approve
 
   helm-release:
-    name: Package & Publish Helm Chart
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -139,14 +136,12 @@ jobs:
           aws s3 cp index.yaml s3://${{ env.CHART_BUCKET }}/
 
   argocd-sync:
-    name: Trigger Argo CD Sync
     needs: helm-release
     runs-on: ubuntu-latest
     steps:
-      - name: Sync via Argo CD
+      - name: Trigger Argo CD Sync
         uses: argoproj/argocd-action@v2
         with:
           argocd_server: ${{ secrets.ARGOCD_SERVER }}
           argocd_token: ${{ secrets.ARGOCD_TOKEN }}
           args: app sync fullstack-app
-
